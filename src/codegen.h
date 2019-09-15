@@ -31,15 +31,18 @@ Value *LogErrorV(const char *str) {
 
 // TODO 2.4: 引数のcodegenを実装してみよう
 Value *VariableExprAST::codegen() {
-    return nullptr;
     // NamedValuesの中にVariableExprAST::NameとマッチするValueがあるかチェックし、
     // あったらそのValueを返す。
     // Look this variable up in the function.
+    if (NamedValues.count(VariableExprAST::variableName) > 0) {
+        return NamedValues[VariableExprAST::variableName];
+    }
+    return nullptr;
 }
 
 // TODO 2.5: 関数呼び出しのcodegenを実装してみよう
 Value *CallExprAST::codegen() {
-    return nullptr;
+    // return nullptr;
     // 1. myModule->getFunctionを用いてcalleeがdefineされているかを
     // チェックし、されていればそのポインタを得る。
 
@@ -47,10 +50,22 @@ Value *CallExprAST::codegen() {
     // サイズが間違っていたらエラーを出力。
     // If argument mismatch error.
 
-    std::vector<Value *> argsV;
     // 3. argsをそれぞれcodegenしllvm::Valueにし、argsVにpush_backする。
 
     // 4. IRBuilderのCreateCallを呼び出し、Valueをreturnする。
+    Function *func = myModule->getFunction(CallExprAST::callee);
+    if (!func) {
+        return LogErrorV("Called function not found.");
+    }
+    if (func->arg_size() != CallExprAST::args.size()) {
+        return LogErrorV("Assigned arguments mismatch.");
+    }
+    std::vector<Value *> argsV;
+    for (int i = 0; i < CallExprAST::args.size(); i++) {
+        Value *v = CallExprAST::args[i]->codegen();
+        argsV.push_back(v);
+    }
+    return Builder.CreateCall(func, argsV);
 }
 
 Value *BinaryAST::codegen() {

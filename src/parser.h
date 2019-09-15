@@ -194,15 +194,14 @@ static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
         if (!var) return LogError("an illegal variable expression");
         return var;
     }
-    getNextToken();
     
     std::vector<std::unique_ptr<ExprAST>> args;
     while (CurTok != ')') {
+        getNextToken();
         auto arg = ParseExpression();
         if (!arg) return LogError("an illegal args");
         args.push_back(std::move(arg));
-        if (CurTok != ',') return LogError("an illegal args separate");
-        getNextToken();
+        if (CurTok != ',' && CurTok != ')') return LogError("illegally args separated");
     }
     getNextToken();
     return llvm::make_unique<CallExprAST>(idStr, std::move(args));
