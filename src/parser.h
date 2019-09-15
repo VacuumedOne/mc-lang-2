@@ -168,7 +168,7 @@ static std::unique_ptr<ExprAST> ParseParenExpr() {
 // 引数の参照である場合はVariableExprASTを返し、関数呼び出しの場合は
 // CallExprASTを返す。
 static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
-    return nullptr;
+    // return nullptr;
     // 1. getIdentifierを用いて識別子を取得する。
 
     // 2. トークンを次に進める。
@@ -183,11 +183,29 @@ static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
     // ParseExpressionを用いる。
     // 呼び出しが終わるまで(CurTok == ')'になるまで)引数をパースしていき、都度argsにpush_backする。
     // 呼び出しの終わりと引数同士の区切りはCurTokが')'であるか','であるかで判別できることに注意。
-    std::vector<std::unique_ptr<ExprAST>> args;
 
     // 6. トークンを次に進める。
 
     // 7. CallExprASTを構成し、返す。
+    std::string idStr = lexer.getIdentifier();
+    getNextToken();
+    if (CurTok != '(') {
+        auto var = llvm::make_unique<VariableExprAST>(idStr);
+        if (!var) return LogError("an illegal variable expression");
+        return var;
+    }
+    getNextToken();
+    
+    std::vector<std::unique_ptr<ExprAST>> args;
+    while (CurTok != ')') {
+        auto arg = ParseExpression();
+        if (!arg) return LogError("an illegal args");
+        args.push_back(std::move(arg));
+        if (CurTok != ',') return LogError("an illegal args separate");
+        getNextToken();
+    }
+    getNextToken();
+    return llvm::make_unique<CallExprAST>(idStr, std::move(args));
 }
 
 // ParsePrimary - NumberASTか括弧をパースする関数
@@ -251,7 +269,24 @@ static std::unique_ptr<PrototypeAST> ParsePrototype() {
     // 2.2とほぼ同じ。CallExprASTではなくPrototypeASTを返し、
     // 引数同士の区切りが','ではなくgetNextToken()を呼ぶと直ぐに
     // CurTokに次の引数(もしくは')')が入るという違いのみ。
-    return nullptr;
+    // return nullptr;
+    std::string idStr = lexer.getIdentifier();
+    getNextToken();
+    if (CurTok != '(') {
+        // auto var = llvm::make_unique<PrototypeAST>(idStr);
+        // if (!var) return nullptr;
+        return nullptr;
+    }
+    getNextToken();
+    
+    std::vector<std::string> args;
+    while (CurTok != ')') {
+        std::string arg = lexer.getIdentifier();
+        args.push_back(arg);
+        getNextToken();
+    }
+    getNextToken();
+    return llvm::make_unique<PrototypeAST>(std::move(idStr), std::move(args));
 }
 
 static std::unique_ptr<FunctionAST> ParseDefinition() {
