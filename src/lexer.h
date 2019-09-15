@@ -15,6 +15,10 @@ enum Token {
     tok_number = -4
 };
 
+bool isidentifierChar(int c) {
+    return (isalpha(c)) || (c == '_');
+}
+
 class Lexer {
     public:
         // gettok - トークンが数値だった場合はnumValにその数値をセットした上でtok_number
@@ -32,6 +36,19 @@ class Lexer {
             // なくなるまで読み込み、その値をidentifierStrにセットする。
             // 読み込んだ文字が"def"だった場合は関数定義であるためtok_defをreturnし、
             // そうでなければ引数の参照か関数呼び出しであるためtok_identifierをreturnする。
+            if (isidentifierChar(lastChar)) {
+                std::string idStr = "";
+                idStr += (char)lastChar;
+                while (isidentifierChar(lastChar = getNextChar(iFile))) {
+                    idStr += (char)lastChar;
+                }
+                if (idStr == "def") {
+                    return tok_def;
+                } else {
+                    setIdentifier(idStr);
+                    return tok_identifier;
+                }
+            }
 
             // TODO 1.3: 数字のパーシングを実装してみよう
             // 今読んでいる文字(lastChar)が数字だった場合(isdigit(lastChar) == true)は、
